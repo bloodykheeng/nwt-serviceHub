@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:nwt.ug)",
+      "WebFetch(domain:supabase.com)"
+    ]
+  }
+}

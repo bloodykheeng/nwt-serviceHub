@@ -1,98 +1,292 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { APP_CONFIG } from '@/constants/config';
+import { QUERY_KEYS } from '@/constants/queryKeys';
+import { FontSize, FontWeight, NWTColors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { getDashboardStats } from '@/lib/services/stats.service';
+import { getExpiringSoon } from '@/lib/services/subscriptions.service';
+import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import moment from 'moment';
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  icon: string;
+  iconColor: string;
+  bgColor: string;
+  delay?: number;
+}
 
-export default function HomeScreen() {
+function StatCard({ label, value, icon, iconColor, bgColor, delay = 0 }: StatCardProps) {
+  const { colors } = useAppTheme();
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <Animated.View
+      entering={FadeInDown.duration(500).delay(delay).springify()}
+      style={[s.statCard, { backgroundColor: colors.card }]}
+    >
+      <View style={[s.statIconBox, { backgroundColor: bgColor }]}>
+        <Ionicons name={icon as any} size={22} color={iconColor} />
+      </View>
+      <Text style={[s.statValue, { color: colors.text }]}>{value}</Text>
+      <Text style={[s.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+    </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
+export default function HomeScreen() {
+  const { colors } = useAppTheme();
+  const { profile, isAdmin } = useAuth();
+  const router = useRouter();
+
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+    isRefetching,
+  } = useQuery({
+    queryKey: QUERY_KEYS.stats(),
+    queryFn: getDashboardStats,
+  });
+
+  const { data: expiring = [] } = useQuery({
+    queryKey: ['expiring-soon'],
+    queryFn: () => getExpiringSoon(),
+  });
+
+  const formatCurrency = (amount: number) => `UGX ${amount.toLocaleString()}`;
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={s.scroll}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={refetchStats}
+          tintColor={NWTColors.primary}
+          colors={[NWTColors.primary]}
+        />
+      }
+    >
+      {/* Greeting */}
+      <Animated.View entering={FadeInDown.duration(400).springify()} style={s.greeting}>
+        <View>
+          <Text style={[s.greetText, { color: colors.textSecondary }]}>Good day,</Text>
+          <Text style={[s.greetName, { color: colors.text }]}>
+            {profile?.full_name ?? 'Welcome'}
+          </Text>
+        </View>
+        <View style={[s.roleBadge, { backgroundColor: isAdmin ? NWTColors.primary + '20' : NWTColors.accent + '20' }]}>
+          <Text style={[s.roleText, { color: isAdmin ? NWTColors.primary : NWTColors.accent }]}>
+            {isAdmin ? 'Admin' : 'Client'}
+          </Text>
+        </View>
+      </Animated.View>
+
+      {/* Stats Grid */}
+      <Text style={[s.sectionTitle, { color: colors.text }]}>Overview</Text>
+
+      {statsLoading ? (
+        <View style={s.statsGrid}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[s.statCard, s.skeleton, { backgroundColor: colors.card }]} />
+          ))}
+        </View>
+      ) : (
+        <View style={s.statsGrid}>
+          <StatCard
+            label="Active Clients"
+            value={stats?.total_clients ?? 0}
+            icon="people"
+            iconColor={NWTColors.primary}
+            bgColor={NWTColors.primary + '20'}
+            delay={0}
+          />
+          <StatCard
+            label="Active Services"
+            value={stats?.total_services ?? 0}
+            icon="briefcase"
+            iconColor={NWTColors.accent}
+            bgColor={NWTColors.accent + '20'}
+            delay={100}
+          />
+          <StatCard
+            label="Subscriptions"
+            value={stats?.active_subscriptions ?? 0}
+            icon="checkmark-circle"
+            iconColor={NWTColors.success}
+            bgColor={NWTColors.success + '20'}
+            delay={200}
+          />
+          <StatCard
+            label="Revenue"
+            value={stats?.total_revenue ? (stats.total_revenue / 1000).toFixed(0) + 'K' : '0'}
+            icon="cash"
+            iconColor={NWTColors.warning}
+            bgColor={NWTColors.warning + '20'}
+            delay={300}
+          />
+        </View>
+      )}
+
+      {/* Revenue Banner */}
+      {stats && (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(400).springify()}
+          style={s.revenueBanner}
+        >
+          <View>
+            <Text style={s.revenueLabel}>Total Active Revenue</Text>
+            <Text style={s.revenueValue}>{formatCurrency(stats.total_revenue)}</Text>
+          </View>
+          <Ionicons name="trending-up" size={32} color="rgba(255,255,255,0.4)" />
+        </Animated.View>
+      )}
+
+      {/* Expiring Soon */}
+      {expiring.length > 0 && (
+        <Animated.View entering={FadeInDown.duration(500).delay(500).springify()}>
+          <View style={s.sectionRow}>
+            <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+              Expiring Soon
+            </Text>
+            <View style={[s.chip, { backgroundColor: NWTColors.warning + '20' }]}>
+              <Text style={[s.chipText, { color: NWTColors.warning }]}>
+                {expiring.length} in {APP_CONFIG.expiringThresholdDays}d
+              </Text>
+            </View>
+          </View>
+
+          {expiring.slice(0, 5).map((sub) => (
+            <TouchableOpacity
+              key={sub.id}
+              style={[s.expiringRow, { backgroundColor: colors.card, borderLeftColor: NWTColors.warning }]}
+              onPress={() => router.push(`/client/${sub.client_id}` as any)}
+              activeOpacity={0.7}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[s.expiringName, { color: colors.text }]}>
+                  {sub.client?.full_name ?? 'Unknown'}
+                </Text>
+                <Text style={[s.expiringService, { color: colors.textSecondary }]}>
+                  {sub.service?.name}
+                </Text>
+              </View>
+              <Text style={[s.expiringDate, { color: NWTColors.warning }]}>
+                {sub.end_date ? moment(sub.end_date).format('MMM D, YYYY') : '–'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      )}
+
+      {/* Inactive note */}
+      {stats && stats.inactive_subscriptions > 0 && (
+        <Animated.View
+          entering={FadeInDown.duration(500).delay(600).springify()}
+          style={[s.inactiveNote, { backgroundColor: colors.card }]}
+        >
+          <Ionicons name="warning-outline" size={18} color={NWTColors.danger} />
+          <Text style={[s.inactiveText, { color: colors.textSecondary }]}>
+            {stats.inactive_subscriptions} inactive subscription
+            {stats.inactive_subscriptions !== 1 ? 's' : ''}
+          </Text>
+        </Animated.View>
+      )}
+    </ScrollView>
+  );
+}
+
+const s = StyleSheet.create({
+  scroll: { padding: 16, paddingBottom: 40 },
+  greeting: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  greetText: { fontSize: FontSize.sm },
+  greetName: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginTop: 2 },
+  roleBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  roleText: { fontSize: 12, fontWeight: FontWeight.bold },
+  sectionTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, marginBottom: 12 },
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    marginBottom: 12,
+  },
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
+  statCard: {
+    width: '47%',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  skeleton: { height: 110, opacity: 0.4 },
+  statIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  statValue: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold },
+  statLabel: { fontSize: FontSize.xs, marginTop: 2 },
+  revenueBanner: {
+    backgroundColor: NWTColors.primary,
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  revenueLabel: { color: 'rgba(255,255,255,0.8)', fontSize: FontSize.sm },
+  revenueValue: { color: '#fff', fontSize: FontSize.xxl, fontWeight: FontWeight.bold, marginTop: 4 },
+  expiringRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  expiringName: { fontSize: FontSize.base, fontWeight: FontWeight.semibold },
+  expiringService: { fontSize: FontSize.sm, marginTop: 2 },
+  expiringDate: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  chipText: { fontSize: 12, fontWeight: FontWeight.bold },
+  inactiveNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  inactiveText: { fontSize: FontSize.sm },
 });
