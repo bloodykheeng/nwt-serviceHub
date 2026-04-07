@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "nwt-servicehub",
+    "name": "NWT Service Hub",
     "slug": "nwt-servicehub",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/nwt-icon.png",
     "scheme": "nwtservicehub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,12 +14,13 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/nwt-icon-removebg-preview.png",
+        "backgroundImage": "./assets/images/nwt-icon-removebg-preview.png",
+        "monochromeImage": "./assets/images/nwt-icon-removebg-preview.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kimerafarouk.nwtservicehub"
     },
     "web": {
       "output": "static",
@@ -30,7 +31,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/nwt-icon-removebg-preview.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -44,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7dc024da-4690-45ec-a37f-c77d65ec5c2c"
+      }
+    },
+    "owner": "kimerafarouk"
   }
 }
