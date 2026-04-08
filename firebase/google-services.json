@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "783919895704",
+    "project_id": "nwt-servicehub",
+    "storage_bucket": "nwt-servicehub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:783919895704:android:3db5463c51c8af24a76ced",
+        "android_client_info": {
+          "package_name": "com.kimerafarouk.nwtservicehub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqtpZASAKiqvdlm9xekwW3a4_W_2DcofA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
