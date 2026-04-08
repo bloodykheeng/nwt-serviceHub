@@ -1,25 +1,40 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { Controller, useForm } from 'react-hook-form';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Switch,
+  View,
 } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createService } from '@/lib/services/services.service';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { z } from 'zod';
+import { NWTColors, FontSize, FontWeight } from '@/constants/theme';
 import { useAppTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { NWTColors, FontSize, FontWeight } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { ActiveStatus } from '@/types';
+import { createService } from '@/lib/services/services.service';
 
 const CATEGORIES = ['Hosting', 'Domain', 'Software', 'E-Commerce', 'Network', 'Branding', 'Consulting', 'Other'];
+
+const schema = z.object({
+  name: z.string().min(2, 'Service name is required'),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  price: z
+    .string()
+    .min(1, 'Price is required')
+    .refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, 'Enter a valid price'),
+  status: z.enum(['active', 'inactive']),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export default function CreateServiceScreen() {
   const { colors } = useAppTheme();
@@ -27,16 +42,30 @@ export default function CreateServiceScreen() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [price, setPrice] = useState('');
-  const [status, setStatus] = useState<ActiveStatus>('active');
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: '', description: '', category: '', price: '', status: 'active' },
+  });
+
+  const selectedCategory = watch('category');
+  const status = watch('status');
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () =>
+    mutationFn: (data: FormData) =>
       createService(
-        { name, description, category, price: parseFloat(price) || 0, status },
+        {
+          name: data.name.trim(),
+          description: data.description?.trim() || undefined,
+          category: data.category || undefined,
+          price: parseFloat(data.price) || 0,
+          status: data.status,
+        },
         profile!.id
       ),
     onSuccess: () => {
@@ -45,14 +74,6 @@ export default function CreateServiceScreen() {
     },
     onError: (err: any) => Alert.alert('Error', err.message),
   });
-
-  const handleSubmit = () => {
-    if (!name.trim()) {
-      Alert.alert('Validation', 'Service name is required');
-      return;
-    }
-    mutate();
-  };
 
   const s = styles(colors);
 
@@ -64,7 +85,7 @@ export default function CreateServiceScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: colors.text }]}>New Service</Text>
-        <TouchableOpacity onPress={handleSubmit} disabled={isPending}>
+        <TouchableOpacity onPress={handleSubmit((d) => mutate(d))} disabled={isPending}>
           {isPending ? (
             <ActivityIndicator color={NWTColors.primary} size="small" />
           ) : (
@@ -73,32 +94,63 @@ export default function CreateServiceScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={24}
+      >
         {/* Name */}
-        <View style={s.field}>
-          <Text style={[s.label, { color: colors.textSecondary }]}>Service Name *</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Web Hosting Basic"
-            placeholderTextColor={colors.placeholder}
-          />
-        </View>
+        <Controller
+          control={control}
+          name="name"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Service Name *</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.name ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="e.g. Web Hosting Basic"
+                placeholderTextColor={colors.placeholder}
+              />
+              {errors.name && <Text style={s.errorText}>{errors.name.message}</Text>}
+            </View>
+          )}
+        />
 
         {/* Description */}
-        <View style={s.field}>
-          <Text style={[s.label, { color: colors.textSecondary }]}>Description</Text>
-          <TextInput
-            style={[s.input, s.textarea, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Brief description of the service..."
-            placeholderTextColor={colors.placeholder}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
+        <Controller
+          control={control}
+          name="description"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Description</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  s.textarea,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.description ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Brief description of the service..."
+                placeholderTextColor={colors.placeholder}
+                multiline
+                numberOfLines={3}
+              />
+              {errors.description && <Text style={s.errorText}>{errors.description.message}</Text>}
+            </View>
+          )}
+        />
 
         {/* Category */}
         <View style={s.field}>
@@ -110,13 +162,13 @@ export default function CreateServiceScreen() {
                 style={[
                   s.chip,
                   {
-                    backgroundColor: category === cat ? NWTColors.primary : colors.inputBg,
-                    borderColor: category === cat ? NWTColors.primary : colors.border,
+                    backgroundColor: selectedCategory === cat ? NWTColors.primary : colors.inputBg,
+                    borderColor: selectedCategory === cat ? NWTColors.primary : colors.border,
                   },
                 ]}
-                onPress={() => setCategory(cat)}
+                onPress={() => setValue('category', selectedCategory === cat ? '' : cat)}
               >
-                <Text style={{ color: category === cat ? '#fff' : colors.text, fontSize: 13, fontWeight: '500' }}>
+                <Text style={{ color: selectedCategory === cat ? '#fff' : colors.text, fontSize: 13, fontWeight: '500' }}>
                   {cat}
                 </Text>
               </TouchableOpacity>
@@ -125,39 +177,49 @@ export default function CreateServiceScreen() {
         </View>
 
         {/* Price */}
-        <View style={s.field}>
-          <Text style={[s.label, { color: colors.textSecondary }]}>Price (UGX)</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-            value={price}
-            onChangeText={setPrice}
-            placeholder="0"
-            placeholderTextColor={colors.placeholder}
-            keyboardType="numeric"
-          />
-        </View>
+        <Controller
+          control={control}
+          name="price"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Price (UGX) *</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.price ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="0"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="numeric"
+              />
+              {errors.price && <Text style={s.errorText}>{errors.price.message}</Text>}
+            </View>
+          )}
+        />
 
         {/* Status */}
         <View style={[s.switchRow, { backgroundColor: colors.card }]}>
           <View>
             <Text style={[s.switchLabel, { color: colors.text }]}>Active</Text>
-            <Text style={[s.switchSub, { color: colors.textSecondary }]}>
-              Clients can see this service
-            </Text>
+            <Text style={[s.switchSub, { color: colors.textSecondary }]}>Clients can see this service</Text>
           </View>
           <Switch
             value={status === 'active'}
-            onValueChange={(v) => setStatus(v ? 'active' : 'inactive')}
+            onValueChange={(v) => setValue('status', v ? 'active' : 'inactive')}
             trackColor={{ false: colors.border, true: NWTColors.success }}
             thumbColor="#fff"
           />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }
 
-const styles = (colors: any) =>
+const styles = (_colors: any) =>
   StyleSheet.create({
     root: { flex: 1 },
     header: {
@@ -171,7 +233,7 @@ const styles = (colors: any) =>
     },
     headerTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
     saveBtn: { fontSize: FontSize.base, fontWeight: FontWeight.bold },
-    scroll: { padding: 16, gap: 4, paddingBottom: 48 },
+    scroll: { padding: 16, paddingBottom: 48 },
     field: { marginBottom: 18 },
     label: { fontSize: 13, fontWeight: FontWeight.medium, marginBottom: 6 },
     input: {
@@ -181,14 +243,11 @@ const styles = (colors: any) =>
       paddingVertical: 12,
       fontSize: FontSize.base,
     },
+    inputError: { borderColor: NWTColors.danger },
+    errorText: { color: NWTColors.danger, fontSize: 12, marginTop: 4 },
     textarea: { height: 80, textAlignVertical: 'top' },
     chips: { gap: 8, paddingVertical: 4 },
-    chip: {
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1,
-    },
+    chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
     switchRow: {
       flexDirection: 'row',
       alignItems: 'center',

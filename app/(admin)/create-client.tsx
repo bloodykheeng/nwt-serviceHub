@@ -1,56 +1,66 @@
+import { FontSize, FontWeight, NWTColors } from '@/constants/theme';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { createClient } from '@/lib/services/profiles.service';
+import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Image,
+  View,
 } from 'react-native';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import * as ImagePicker from 'expo-image-picker';
-import { createClient, uploadAvatar } from '@/lib/services/profiles.service';
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { NWTColors, FontSize, FontWeight } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { z } from 'zod';
+
+const schema = z.object({
+  full_name: z.string().min(2, 'Full name is required'),
+  email: z.string().check(z.email({ error: 'Enter a valid email address' })),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || v.length >= 7, 'Enter a valid phone number'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type FormData = z.infer<typeof schema>;
 
 export default function CreateClientScreen() {
   const { colors } = useAppTheme();
   const router = useRouter();
   const qc = useQueryClient();
-
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { full_name: '', email: '', phone: '', password: '' },
+  });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async () => {
-      let photo_url: string | undefined;
-      if (photoUri) {
-        setUploading(true);
-        // We need the user id first – createClient returns profile
-        // We'll upload after creation using a temp approach
-      }
-      return createClient({
-        full_name: fullName.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim() || undefined,
-        password,
-      });
-    },
+    mutationFn: (data: FormData) =>
+      createClient({
+        full_name: data.full_name.trim(),
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone?.trim() || undefined,
+        password: data.password,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['profiles'] });
       router.back();
     },
     onError: (err: any) => Alert.alert('Error', err.message),
-    onSettled: () => setUploading(false),
   });
 
   const pickPhoto = async () => {
@@ -60,21 +70,7 @@ export default function CreateClientScreen() {
       aspect: [1, 1],
       quality: 0.7,
     });
-    if (!result.canceled) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
-
-  const handleSubmit = () => {
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Validation', 'Full name, email and password are required');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Validation', 'Password must be at least 6 characters');
-      return;
-    }
-    mutate();
+    if (!result.canceled) setPhotoUri(result.assets[0].uri);
   };
 
   const s = styles(colors);
@@ -87,8 +83,8 @@ export default function CreateClientScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[s.headerTitle, { color: colors.text }]}>Register Client</Text>
-        <TouchableOpacity onPress={handleSubmit} disabled={isPending || uploading}>
-          {isPending || uploading ? (
+        <TouchableOpacity onPress={handleSubmit((d) => mutate(d))} disabled={isPending}>
+          {isPending ? (
             <ActivityIndicator color={NWTColors.primary} size="small" />
           ) : (
             <Text style={[s.saveBtn, { color: NWTColors.primary }]}>Save</Text>
@@ -96,7 +92,13 @@ export default function CreateClientScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid
+        keyboardShouldPersistTaps="handled"
+        extraScrollHeight={24}
+      >
         {/* Photo */}
         <TouchableOpacity style={s.photoPicker} onPress={pickPhoto} activeOpacity={0.8}>
           {photoUri ? (
@@ -109,39 +111,110 @@ export default function CreateClientScreen() {
           )}
         </TouchableOpacity>
 
-        {[
-          { label: 'Full Name *', value: fullName, onChange: setFullName, placeholder: 'Jane Doe', type: 'default' },
-          { label: 'Email *', value: email, onChange: setEmail, placeholder: 'client@example.com', type: 'email-address' },
-          { label: 'Phone', value: phone, onChange: setPhone, placeholder: '+256 700 000 000', type: 'phone-pad' },
-        ].map((field) => (
-          <View key={field.label} style={s.field}>
-            <Text style={[s.label, { color: colors.textSecondary }]}>{field.label}</Text>
-            <TextInput
-              style={[s.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-              value={field.value}
-              onChangeText={field.onChange}
-              placeholder={field.placeholder}
-              placeholderTextColor={colors.placeholder}
-              keyboardType={field.type as any}
-              autoCapitalize={field.type === 'default' ? 'words' : 'none'}
-              autoCorrect={false}
-            />
-          </View>
-        ))}
+        {/* Full Name */}
+        <Controller
+          control={control}
+          name="full_name"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Full Name *</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.full_name ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Jane Doe"
+                placeholderTextColor={colors.placeholder}
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              {errors.full_name && <Text style={s.errorText}>{errors.full_name.message}</Text>}
+            </View>
+          )}
+        />
 
-        <View style={s.field}>
-          <Text style={[s.label, { color: colors.textSecondary }]}>Password *</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Min. 6 characters"
-            placeholderTextColor={colors.placeholder}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-        </View>
-      </ScrollView>
+        {/* Email */}
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Email *</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.email ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="client@example.com"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {errors.email && <Text style={s.errorText}>{errors.email.message}</Text>}
+            </View>
+          )}
+        />
+
+        {/* Phone */}
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Phone</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.phone ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="+256 700 000 000"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="phone-pad"
+              />
+              {errors.phone && <Text style={s.errorText}>{errors.phone.message}</Text>}
+            </View>
+          )}
+        />
+
+        {/* Password */}
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { value, onChange, onBlur } }) => (
+            <View style={s.field}>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Password *</Text>
+              <TextInput
+                style={[
+                  s.input,
+                  { backgroundColor: colors.inputBg, color: colors.text },
+                  errors.password ? s.inputError : { borderColor: colors.border },
+                ]}
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                placeholder="Min. 6 characters"
+                placeholderTextColor={colors.placeholder}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              {errors.password && <Text style={s.errorText}>{errors.password.message}</Text>}
+            </View>
+          )}
+        />
+      </KeyboardAwareScrollView>
     </View>
   );
 }
@@ -183,4 +256,6 @@ const styles = (colors: any) =>
       paddingVertical: 12,
       fontSize: FontSize.base,
     },
+    inputError: { borderColor: NWTColors.danger },
+    errorText: { color: NWTColors.danger, fontSize: 12, marginTop: 4 },
   });

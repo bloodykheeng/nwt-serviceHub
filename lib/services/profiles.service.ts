@@ -1,8 +1,9 @@
-import { supabase } from '@/lib/supabase';
-import { Profile, UpdateProfileInput, PaginationParams, PaginatedResult } from '@/types';
 import { APP_CONFIG } from '@/constants/config';
+import { supabase } from '@/lib/supabase';
+import { PaginatedResult, PaginationParams, Profile, UpdateProfileInput } from '@/types';
 
 export async function getProfile(id: string): Promise<Profile> {
+  console.log("🚀 ~ getProfile ~ id:", id)
   const { data, error } = await supabase
     .from('profiles')
     .select('*')

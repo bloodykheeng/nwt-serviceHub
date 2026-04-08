@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { getProfile } from '@/lib/services/profiles.service';
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types';
-import { getProfile } from '@/lib/services/profiles.service';
+import { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 interface AuthContextValue {
   user: User | null;
@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
+    console.log("🚀 ~ AuthProvider ~ user.id:", user?.id)
     if (user?.id) await loadProfile(user.id);
   }, [user?.id, loadProfile]);
 

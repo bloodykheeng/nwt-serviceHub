@@ -41,3 +41,12 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Firebase secrets — never commit these
+/firebase/google-services.json
+/firebase/GoogleService-Info.plist
+/firebase/*.json
+
+# Supabase local secrets
+supabase/.env
+supabase/.env.local

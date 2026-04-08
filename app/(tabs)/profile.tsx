@@ -18,6 +18,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 export default function ProfileScreen() {
   const { colors } = useAppTheme();
   const { profile, isAdmin, signOut } = useAuth();
+  console.log("🚀 ~ ProfileScreen ~ profile:", profile)
   const router = useRouter();
 
   const handleSignOut = () => {

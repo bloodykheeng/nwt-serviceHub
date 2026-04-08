@@ -1,7 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { PushNotification, NotificationRecipient, SendNotificationInput, PaginationParams, PaginatedResult } from '@/types';
+import { PushNotification, SendNotificationInput, PaginationParams, PaginatedResult } from '@/types';
 import { APP_CONFIG } from '@/constants/config';
-import Expo from 'expo-notifications';
 
 // ─── DB Operations ────────────────────────────────────────────────────────────
 
@@ -123,50 +122,23 @@ export async function sendNotification(
       .insert(recipients);
     if (recError) throw new Error(recError.message);
 
-    // 4. Get push tokens and send via Expo
+    // 4. Get FCM tokens and dispatch via Supabase Edge Function
     const { data: tokens } = await supabase
       .from('push_tokens')
       .select('token')
       .in('user_id', recipientIds);
 
     if (tokens && tokens.length > 0) {
-      await sendExpoPushNotifications(
-        tokens.map((t: { token: string }) => t.token),
-        input.title,
-        input.body,
-        input.data
-      );
+      const { error: fnError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          tokens: tokens.map((t: { token: string }) => t.token),
+          title: input.title,
+          body: input.body,
+          data: input.data ?? {},
+        },
+      });
+      if (fnError) console.warn('Failed to dispatch FCM notifications:', fnError.message);
     }
-  }
-}
-
-async function sendExpoPushNotifications(
-  tokens: string[],
-  title: string,
-  body: string,
-  data?: Record<string, unknown>
-): Promise<void> {
-  const messages = tokens
-    .filter((token) => token.startsWith('ExponentPushToken'))
-    .map((token) => ({
-      to: token,
-      sound: 'default' as const,
-      title,
-      body,
-      data: data ?? {},
-    }));
-
-  if (messages.length === 0) return;
-
-  // Send in batches of 100
-  const BATCH_SIZE = 100;
-  for (let i = 0; i < messages.length; i += BATCH_SIZE) {
-    const batch = messages.slice(i, i + BATCH_SIZE);
-    await fetch('https://exp.host/--/api/v2/push/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(batch),
-    });
   }
 }
 

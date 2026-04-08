@@ -1,20 +1,20 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { getServices } from '@/lib/services/services.service';
-import { useAppTheme } from '@/contexts/ThemeContext';
+import { FontSize, FontWeight, NWTColors } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
-import { NWTColors, FontSize, FontWeight } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { getServices } from '@/lib/services/services.service';
 import { Service } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import {
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 function SectionHeader({ title }: { title: string }) {
   const { colors } = useAppTheme();
@@ -118,28 +118,21 @@ export default function SettingsScreen() {
       </Animated.View>
 
       {/* Services – admin only */}
+      {/* Services – admin only */}
       {isAdmin && (
-        <Animated.View entering={FadeInDown.duration(400).delay(100).springify()}>
+        <Animated.View
+          entering={FadeInDown.duration(400).delay(100).springify()}
+        >
           <SectionHeader title="Services" />
 
-          <TouchableOpacity
-            style={[s.addServiceBtn, { borderColor: NWTColors.primary }]}
-            onPress={() => router.push('/(admin)/create-service' as any)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add-circle-outline" size={20} color={NWTColors.primary} />
-            <Text style={[s.addServiceText, { color: NWTColors.primary }]}>Add New Service</Text>
-          </TouchableOpacity>
-
-          {services.map((service) => (
-            <ServiceItem key={service.id} service={service} />
-          ))}
-
-          {services.length === 0 && (
-            <Text style={[s.emptyText, { color: colors.textSecondary }]}>
-              No services yet. Add one above.
-            </Text>
-          )}
+          <SettingsRow
+            icon="construct"
+            iconColor={NWTColors.primary}
+            label="Manage Services"
+            onPress={() =>
+              router.push("/(admin)/services" as any)
+            }
+          />
         </Animated.View>
       )}
 
