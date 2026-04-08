@@ -43,8 +43,8 @@ app-example
 /android
 
 # Firebase secrets — never commit these
-# /firebase/google-services.json
-# /firebase/GoogleService-Info.plist
+/firebase/google-services.json
+/firebase/GoogleService-Info.plist
 /firebase/nwt-servicehub-firebase-*.json
 
 # Supabase local secrets

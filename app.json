@@ -10,10 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "googleServicesFile": "./firebase/GoogleService-Info.plist"
+      "googleServicesFile": "@GOOGLE_SERVICES_PLIST"
     },
     "android": {
-      "googleServicesFile": "./firebase/google-services.json",
+      "googleServicesFile": "@GOOGLE_SERVICES_JSON",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/nwt-icon-removebg-preview.png",
