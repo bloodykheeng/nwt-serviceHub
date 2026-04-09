@@ -3,6 +3,18 @@
 Build your Expo app locally using Docker — no WSL Android SDK setup needed.
 Drop the config files into any project and run one command to get an APK.
 
+> ✅ **Confirmed working.** Successfully built a 112 MB APK on Docker Desktop Windows
+> using `network_mode: host` + `_JAVA_OPTIONS=-Djava.net.preferIPv4Stack=true` + updated CA certs.
+
+## Key Fixes That Made It Work
+
+| Problem                                                              | Fix                                                                              |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Docker DNS broken                                                    | `network_mode: host` — container shares host network stack                       |
+| Java/Gradle tries IPv6 (broken on Docker Desktop Windows)            | `_JAVA_OPTIONS=-Djava.net.preferIPv4Stack=true`                                  |
+| TLS handshake failure on Maven Central                               | Updated CA certs in `Dockerfile.eas` via `apt-get install ca-certificates`       |
+| `docker build --no-cache` fails (re-pulls base image via broken DNS) | Use `docker compose build` (no `--no-cache`) — base image already cached locally |
+
 ---
 
 ## Why Docker?
