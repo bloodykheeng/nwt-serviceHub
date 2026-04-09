@@ -48,3 +48,7 @@ app-example
 /firebase/GoogleService-Info.plist
 /firebase/nwt-servicehub-firebase-*.json
 
+# EAS local build output
+build-*.apk
+build-*/
+

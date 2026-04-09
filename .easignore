@@ -49,3 +49,7 @@ app-example
 
 /ios
 /android
+
+# EAS local build output
+build-*.apk
+build-*/
