@@ -6,7 +6,8 @@
       "Bash(node -e ':*)",
       "Bash(ls \"d:/coding/bloodykheeng projects/reactnative/nwt service hub/nwt-servicehub/\"*.json \"d:/coding/bloodykheeng projects/reactnative/nwt service hub/nwt-servicehub/\"*.plist)",
       "Bash(npx expo:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebSearch"
     ]
   }
 }

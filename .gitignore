@@ -31,7 +31,8 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -47,6 +48,3 @@ app-example
 /firebase/GoogleService-Info.plist
 /firebase/nwt-servicehub-firebase-*.json
 
-# Supabase local secrets
-supabase/.env
-supabase/.env.local
