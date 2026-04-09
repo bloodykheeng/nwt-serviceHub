@@ -71,7 +71,7 @@ export default function LoginScreen() {
             <View style={s.logoBox}>
               <Text style={s.logoText}>NWT</Text>
             </View>
-            <Text style={[s.title, { color: colors.text }]}>ServiceHub f</Text>
+            <Text style={[s.title, { color: colors.text }]}>ServiceHub</Text>
             <Text style={[s.subtitle, { color: colors.textSecondary }]}>
               New Wave Technologies
             </Text>
@@ -79,10 +79,10 @@ export default function LoginScreen() {
 
           {/* Form */}
           <Animated.View entering={FadeInDown.duration(600).delay(200).springify()} style={s.form}>
-            <Text style={[s.formTitle, { color: colors.text }]}>Sign In ff</Text>
+            <Text style={[s.formTitle, { color: colors.text }]}>Sign In</Text>
 
             <View style={s.fieldGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>Email ddff</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Email dd</Text>
 
               <Controller
                 control={control}
