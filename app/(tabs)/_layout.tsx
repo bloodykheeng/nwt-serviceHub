@@ -1,12 +1,13 @@
-import { Tabs, useRouter } from 'expo-router';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { useAppTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { getUnreadCount } from '@/lib/services/notifications.service';
 import { QUERY_KEYS } from '@/constants/queryKeys';
 import { NWTColors } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppTheme } from '@/contexts/ThemeContext';
+import { getUnreadCount } from '@/lib/services/notifications.service';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
+import { Tabs, useRouter } from 'expo-router';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function NotificationBell() {
   const { user } = useAuth();
@@ -37,82 +38,84 @@ function NotificationBell() {
 }
 
 export default function TabLayout() {
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: NWTColors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          elevation: 0,
-          shadowOpacity: 0,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-        headerStyle: {
-          backgroundColor: colors.surface,
-          elevation: 0,
-          shadowOpacity: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        },
-        headerTintColor: colors.text,
-        headerTitleStyle: {
-          fontWeight: '700',
-          fontSize: 17,
-        },
-        headerRight: () => <NotificationBell />,
-        headerRightContainerStyle: { paddingRight: 16 },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
+    <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: NWTColors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
+          tabBarStyle: {
+            backgroundColor: colors.tabBar,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+            elevation: 0,
+            shadowOpacity: 0,
+            height: 60,
+            paddingBottom: 8,
+            paddingTop: 4,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+          },
+          headerStyle: {
+            backgroundColor: colors.surface,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 17,
+          },
+          headerRight: () => <NotificationBell />,
+          headerRightContainerStyle: { paddingRight: 16 },
         }}
-      />
-      <Tabs.Screen
-        name="clients"
-        options={{
-          title: 'Clients',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
-      {/* Hide old explore tab */}
-      <Tabs.Screen name="explore" options={{ href: null }} />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="clients"
+          options={{
+            title: 'Clients',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="people" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="settings" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person" size={size} color={color} />
+            ),
+          }}
+        />
+        {/* Hide old explore tab */}
+        <Tabs.Screen name="explore" options={{ href: null }} />
+      </Tabs>
+    </SafeAreaView>
   );
 }
 

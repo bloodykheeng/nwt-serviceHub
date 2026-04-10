@@ -2,9 +2,16 @@ import { supabase } from '@/lib/supabase';
 import { LoginInput, RegisterInput } from '@/types';
 
 export async function signIn({ email, password }: LoginInput) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message);
-  return data;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    return data;
+  } catch (err: any) {
+    if (err instanceof RangeError || err?.message?.includes('status provided (0)')) {
+      throw new Error('Network error — check your internet connection and try again.');
+    }
+    throw err;
+  }
 }
 
 export async function signUp({ email, password, full_name, phone }: RegisterInput) {

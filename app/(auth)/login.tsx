@@ -82,7 +82,7 @@ export default function LoginScreen() {
             <Text style={[s.formTitle, { color: colors.text }]}>Sign In</Text>
 
             <View style={s.fieldGroup}>
-              <Text style={[s.label, { color: colors.textSecondary }]}>Email dd</Text>
+              <Text style={[s.label, { color: colors.textSecondary }]}>Email</Text>
 
               <Controller
                 control={control}
